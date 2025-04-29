@@ -427,43 +427,51 @@ createBtn.addEventListener("click", () => {
 
 // 2. Jab page load ho, tab localStorage ka data uthao aur object create karo
 window.addEventListener("DOMContentLoaded", () => {
-  let savedData = JSON.parse(localStorage.getItem("poll")) || [];
+  const savedData = JSON.parse(localStorage.getItem("poll")) || [];
 
   if (savedData.length > 0) {
-    // Merge all saved data into one big text
-    let allPollText = savedData.join('\n');
+    // Combine all saved data into one text block
+    const allPollText = savedData.join('\n');
 
-    // Split lines
-    let lines = allPollText.split('\n').map(line => line.trim()).filter(line => line !== "");
+    // Split into lines and clean them
+    const lines = allPollText
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line !== "");
 
-    let pollObjects = [];
+    const structuredPoll = [];
     let currentQuestion = null;
 
     lines.forEach(line => {
-      if (/^\d+\.\s/.test(line)) { // Agar line number se start hoti hai
-        if (currentQuestion) {
-          pollObjects.push(currentQuestion);
-        }
+      if (line.startsWith('?')) {
+        // Save the previous question if it exists
+        if (currentQuestion) structuredPoll.push(currentQuestion);
+
+        // Start new question
         currentQuestion = {
-          question: line.replace(/^\d+\.\s/, ''), // "1. " hatado
-          options: []
+          question: line.slice(1).trim(), // Remove leading "?" and trim
+          correct: null,
+          incorrect: []
         };
-      } else {
-        if (currentQuestion) {
-          currentQuestion.options.push(line);
+      } else if (currentQuestion) {
+        const isCorrect = line.startsWith('*');
+        const cleanedOption = line.replace('*', '').trim();
+
+        if (isCorrect) {
+          currentQuestion.correct = cleanedOption;
+        } else {
+          currentQuestion.incorrect.push(cleanedOption);
         }
       }
     });
 
-    // Last question bhi add karo
-    if (currentQuestion) {
-      pollObjects.push(currentQuestion);
-    }
+    // Save the last question
+    if (currentQuestion) structuredPoll.push(currentQuestion);
 
-    // Console me show karo final object
-    console.log("Parsed Poll Objects:", pollObjects);
+    // Replace old poll data in localStorage
+    localStorage.setItem("poll", JSON.stringify(structuredPoll));
 
-    // (Optional) Screen par bhi dikhana hai to yahan code likh sakte ho
+    console.log("Updated Poll Structure:", structuredPoll);
   } else {
     console.log("No Poll Data Found.");
   }
