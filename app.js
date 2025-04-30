@@ -430,10 +430,8 @@ window.addEventListener("DOMContentLoaded", () => {
   const savedData = JSON.parse(localStorage.getItem("poll")) || [];
 
   if (savedData.length > 0) {
-    // Combine all saved data into one text block
     const allPollText = savedData.join('\n');
 
-    // Split into lines and clean them
     const lines = allPollText
       .split('\n')
       .map(line => line.trim())
@@ -443,35 +441,37 @@ window.addEventListener("DOMContentLoaded", () => {
     let currentQuestion = null;
 
     lines.forEach(line => {
-      if (line.startsWith('?')) {
-        // Save the previous question if it exists
+      const questionMatch = line.match(/^\d+\.\s+(.*)/); // Match "1. What is ...?"
+      const optionMatch = line.match(/^[A-D]\.\s+(.*)/);  // Match "A. Option"
+
+      if (questionMatch) {
+        // Save previous question
         if (currentQuestion) structuredPoll.push(currentQuestion);
 
-        // Start new question
+        // Start new one
         currentQuestion = {
-          question: line.slice(1).trim(), // Remove leading "?" and trim
+          question: questionMatch[1].trim(),
           correct: null,
           incorrect: []
         };
-      } else if (currentQuestion) {
-        const isCorrect = line.startsWith('*');
-        const cleanedOption = line.replace('*', '').trim();
+      } else if (optionMatch && currentQuestion) {
+        const optionText = optionMatch[1].trim();
+        const isCorrect = optionText.startsWith('*');
+        const cleanOption = optionText.replace('*', '').trim();
 
         if (isCorrect) {
-          currentQuestion.correct = cleanedOption;
+          currentQuestion.correct = cleanOption;
         } else {
-          currentQuestion.incorrect.push(cleanedOption);
+          currentQuestion.incorrect.push(cleanOption);
         }
       }
     });
 
-    // Save the last question
+    // Push the last question
     if (currentQuestion) structuredPoll.push(currentQuestion);
 
-    // Replace old poll data in localStorage
     localStorage.setItem("poll", JSON.stringify(structuredPoll));
-
-    console.log("Updated Poll Structure:", structuredPoll);
+    console.log("Structured Poll Data:", structuredPoll);
   } else {
     console.log("No Poll Data Found.");
   }
